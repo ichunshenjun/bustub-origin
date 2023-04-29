@@ -78,7 +78,7 @@ TEST(StarterTest, TrieNodeRemoveTest) {
   EXPECT_EQ(child_node, nullptr);
 }
 
-TEST(StarterTest, DISABLED_TrieInsertTest) {
+TEST(StarterTest, TrieInsertTest) {
   {
     Trie trie;
     trie.Insert<std::string>("abc", "d");
@@ -129,7 +129,7 @@ TEST(StarterTest, DISABLED_TrieInsertTest) {
   }
 }
 
-TEST(StarterTrieTest, DISABLED_RemoveTest) {
+TEST(StarterTrieTest, RemoveTest) {
   {
     Trie trie;
     bool success = trie.Insert<int>("a", 5);
@@ -162,7 +162,7 @@ TEST(StarterTrieTest, DISABLED_RemoveTest) {
   }
 }
 
-TEST(StarterTrieTest, DISABLED_ConcurrentTest1) {
+TEST(StarterTrieTest, ConcurrentTest1) {
   Trie trie;
   constexpr int num_words = 1000;
   constexpr int num_bits = 10;
