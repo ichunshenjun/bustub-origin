@@ -12,14 +12,17 @@
 
 #pragma once
 
+#include <cstddef>
 #include <limits>
 #include <list>
 #include <mutex>  // NOLINT
 #include <unordered_map>
 #include <vector>
+#include <algorithm>
 
 #include "common/config.h"
 #include "common/macros.h"
+#include "common/logger.h"
 
 namespace bustub {
 
@@ -131,7 +134,10 @@ class LRUKReplacer {
    * @return size_t
    */
   auto Size() -> size_t;
-
+  struct FrameEntry{
+    size_t hit_count_{0};
+    bool set_evictable_{true};
+  };
  private:
   // TODO(student): implement me! You can replace these member variables as you like.
   // Remove maybe_unused if you start using them.
@@ -140,6 +146,9 @@ class LRUKReplacer {
   [[maybe_unused]] size_t replacer_size_;
   [[maybe_unused]] size_t k_;
   std::mutex latch_;
+  std::unordered_map<frame_id_t,FrameEntry> frame_info_;
+  std::list<frame_id_t> fifo_;
+  std::list<frame_id_t> lru_;
 };
 
 }  // namespace bustub
