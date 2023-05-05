@@ -25,10 +25,11 @@ LEAF_2[shape=plain color=green label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACI
 </TR></TABLE>>];
 INT_3:p2 -> LEAF_2;
 INT_6[shape=plain color=pink label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
-<TR><TD COLSPAN="2">P=6</TD></TR>
-<TR><TD COLSPAN="2">max_size=3,min_size=2,size=2</TD></TR>
+<TR><TD COLSPAN="3">P=6</TD></TR>
+<TR><TD COLSPAN="3">max_size=3,min_size=2,size=3</TD></TR>
 <TR><TD PORT="p4"> </TD>
 <TD PORT="p5">4</TD>
+<TD PORT="p8">5</TD>
 </TR></TABLE>>];
 INT_7:p6 -> INT_6;
 LEAF_4[shape=plain color=green label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
@@ -43,5 +44,11 @@ LEAF_5[shape=plain color=green label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACI
 <TR><TD>4</TD>
 </TR></TABLE>>];
 INT_6:p5 -> LEAF_5;
+LEAF_8[shape=plain color=green label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+<TR><TD COLSPAN="1">P=8</TD></TR>
+<TR><TD COLSPAN="1">max_size=2,min_size=1,size=1</TD></TR>
+<TR><TD>5</TD>
+</TR></TABLE>>];
+INT_6:p8 -> LEAF_8;
 {rank=same INT_3 INT_6};
 }

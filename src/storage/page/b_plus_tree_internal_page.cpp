@@ -65,24 +65,24 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetValueAt(int index, const ValueType &valu
 
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::FindKey(const KeyType &key,KeyComparator &comparator)->ValueType{
-  int left=0;
+  int left=1;
   int right=GetSize()-1;
-  int mid=left+(right-left)/2;
   if(comparator(key,KeyAt(1))<0){
     return ValueAt(0);
   }
-  while(left<right){
+  while(left<=right){
+    int mid=left+(right-left)/2;
     if(comparator(key,KeyAt(mid))<0){
       right=mid-1;
     }
     else if(comparator(key,KeyAt(mid))>0){
-      left=mid;
+      left=mid+1;
     }
     else if(comparator(key,KeyAt(mid))==0){
       return ValueAt(mid);
     }
   }
-  return ValueAt(left);
+  return ValueAt(right);
 }
 
 INDEX_TEMPLATE_ARGUMENTS
@@ -108,7 +108,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Insert(int index,const KeyType &key,const V
 
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveTo(BPlusTreeInternalPage* other_node,BufferPoolManager*bpm){
-  for(int i=GetMinSize();i<GetMaxSize();i++){
+  for(int i=GetMinSize();i<GetMaxSize()+1;i++){
     other_node->SetKeyAt(i-GetMinSize(),KeyAt(i));
     other_node->SetValueAt(i-GetMinSize(), ValueAt(i));
     auto child_node=reinterpret_cast<BPlusTreePage*>(bpm->FetchPage(ValueAt(i))->GetData());

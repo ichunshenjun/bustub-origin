@@ -66,16 +66,20 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
   if(leaf_node->GetSize()==leaf_node->GetMaxSize()){
     Split(leaf_node);
   }
+  buffer_pool_manager_->UnpinPage(leaf_node->GetPageId(), true);
   return success;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::FindLeafPage(const KeyType &key) -> LeafPage*{
-  auto cur_node=reinterpret_cast<BPlusTreePage*>(buffer_pool_manager_->FetchPage(root_page_id_)->GetData());
+  page_id_t cur_node_id=root_page_id_;
+  auto cur_node=reinterpret_cast<BPlusTreePage*>(buffer_pool_manager_->FetchPage(cur_node_id)->GetData());
   while(!cur_node->IsLeafPage()){
     auto cur_internal_node=reinterpret_cast<InternalPage*>(cur_node);
-    page_id_t child_page_id=cur_internal_node->FindKey(key,comparator_);
-    cur_node=reinterpret_cast<BPlusTreePage*>(buffer_pool_manager_->FetchPage(child_page_id)->GetData());
+    auto new_node_id=cur_internal_node->FindKey(key,comparator_);
+    buffer_pool_manager_->UnpinPage(cur_node_id, false);
+    cur_node_id=new_node_id;
+    cur_node=reinterpret_cast<BPlusTreePage*>(buffer_pool_manager_->FetchPage(cur_node_id)->GetData());
   }
   return reinterpret_cast<LeafPage*>(cur_node);
 }
@@ -100,6 +104,7 @@ auto  BPLUSTREE_TYPE::Split(ClassType *origin_node)->ClassType*{
   new_internal_node->Init(new_node_id,origin_internal_node->GetParentPageId(),origin_internal_node->GetMaxSize());
   origin_internal_node->MoveTo(new_internal_node,buffer_pool_manager_);
   InsertIntoParent(origin_internal_node, origin_internal_node->KeyAt(origin_internal_node->GetMinSize()), new_internal_node);
+  new_internal_node->SetParentPageId(origin_internal_node->GetParentPageId());
   return reinterpret_cast<ClassType*>(new_internal_node);
 }
 

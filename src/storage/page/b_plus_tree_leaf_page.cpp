@@ -107,10 +107,10 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &val
     }
     return true;
   }
-  while(left<right){
+  while(left<=right){
     int mid=left+(right-left)/2;
     if(comparator(key,KeyAt(mid))<0){
-      right=mid;
+      right=mid-1;
     }
     else if(comparator(key,KeyAt(mid))>0){
       left=mid+1;
