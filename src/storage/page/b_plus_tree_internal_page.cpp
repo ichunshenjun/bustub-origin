@@ -12,6 +12,7 @@
 #include <iostream>
 #include <sstream>
 
+#include "buffer/buffer_pool_manager.h"
 #include "common/exception.h"
 #include "storage/page/b_plus_tree_internal_page.h"
 #include "storage/page/b_plus_tree_page.h"
@@ -31,6 +32,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id
   SetPageId(page_id);
   SetParentPageId(parent_id);
   SetMaxSize(max_size);
+  SetSize(0);
 }
 /*
  * Helper method to get/set the key associated with input "index"(a.k.a
@@ -54,6 +56,66 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const -> ValueType { 
   return array_[index].second; 
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetValueAt(int index, const ValueType &value) {
+  array_[index].second=value;
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::FindKey(const KeyType &key,KeyComparator &comparator)->ValueType{
+  int left=0;
+  int right=GetSize()-1;
+  int mid=left+(right-left)/2;
+  if(comparator(key,KeyAt(1))<0){
+    return ValueAt(0);
+  }
+  while(left<right){
+    if(comparator(key,KeyAt(mid))<0){
+      right=mid-1;
+    }
+    else if(comparator(key,KeyAt(mid))>0){
+      left=mid;
+    }
+    else if(comparator(key,KeyAt(mid))==0){
+      return ValueAt(mid);
+    }
+  }
+  return ValueAt(left);
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueIndex(const ValueType &value)->int{
+  for(int i=0;i<GetSize();i++){
+    if(ValueAt(i)==value){
+      return i;
+    }
+  }
+  return -1;
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Insert(int index,const KeyType &key,const ValueType &value){
+  for(int i=GetSize();i>=index+1;i--){
+    SetKeyAt(i,KeyAt(i-1));
+    SetValueAt(i,ValueAt(i-1));
+  }
+  SetKeyAt(index+1,key);
+  SetValueAt(index+1,value);
+  IncreaseSize(1);
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveTo(BPlusTreeInternalPage* other_node,BufferPoolManager*bpm){
+  for(int i=GetMinSize();i<GetMaxSize();i++){
+    other_node->SetKeyAt(i-GetMinSize(),KeyAt(i));
+    other_node->SetValueAt(i-GetMinSize(), ValueAt(i));
+    auto child_node=reinterpret_cast<BPlusTreePage*>(bpm->FetchPage(ValueAt(i))->GetData());
+    child_node->SetParentPageId(other_node->GetPageId());
+    other_node->IncreaseSize(1);
+    this->IncreaseSize(-1);
+  }
 }
 
 // valuetype for internalNode should be page id_t
