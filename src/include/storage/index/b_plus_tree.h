@@ -22,7 +22,7 @@
 namespace bustub {
 
 #define BPLUSTREE_TYPE BPlusTree<KeyType, ValueType, KeyComparator>
-
+enum class OpType { READ = 0, INSERT, DELETE };
 /**
  * Main class providing the API for the Interactive B+ Tree.
  *
@@ -50,13 +50,22 @@ class BPlusTree {
 
   auto FindLeafPage(const KeyType &key) -> LeafPage *;
 
-  template<typename ClassType>
-  auto Split(ClassType *origin_node)->ClassType*;
+  template <typename ClassType>
+  auto Split(ClassType *origin_node) -> ClassType *;
 
-  template<typename ClassType>
-  void InsertIntoParent(ClassType * origin_node,const KeyType &key,ClassType* new_node);
+  template <typename ClassType>
+  void InsertIntoParent(ClassType *origin_node, const KeyType &key, ClassType *new_node);
   // Remove a key and its value from this B+ tree.
   void Remove(const KeyType &key, Transaction *transaction = nullptr);
+
+  template <typename ClassType>
+  void DeleteEntry(const KeyType &key, ClassType *delete_node);
+
+  template <typename ClassType>
+  void Borrow(ClassType *left_node, ClassType *right_node);
+
+  template <typename ClassType>
+  void Merge(ClassType *left_node, ClassType *right_node);
 
   // return the value associated with a given key
   auto GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *transaction = nullptr) -> bool;
@@ -65,6 +74,7 @@ class BPlusTree {
   auto GetRootPageId() -> page_id_t;
 
   // index iterator
+  auto FindLeafPage(bool left) -> LeafPage *;
   auto Begin() -> INDEXITERATOR_TYPE;
   auto Begin(const KeyType &key) -> INDEXITERATOR_TYPE;
   auto End() -> INDEXITERATOR_TYPE;

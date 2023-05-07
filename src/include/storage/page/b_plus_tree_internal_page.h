@@ -44,10 +44,14 @@ class BPlusTreeInternalPage : public BPlusTreePage {
   void SetKeyAt(int index, const KeyType &key);
   auto ValueAt(int index) const -> ValueType;
   void SetValueAt(int index, const ValueType &value);
-  auto FindKey(const KeyType &key,KeyComparator &comparator)->ValueType;
-  auto ValueIndex(const ValueType &value)->int;
-  void Insert(int index,const KeyType &key,const ValueType &value);
-  void MoveTo(BPlusTreeInternalPage* other_node,BufferPoolManager *bpm);
+  auto FindKey(const KeyType &key, KeyComparator &comparator) -> ValueType;
+  auto ValueIndex(const ValueType &value) -> int;
+  auto KeyIndex(const KeyType &key, KeyComparator &comparator) -> int;
+  void Insert(int index, const KeyType &key, const ValueType &value);
+  void MoveTo(BPlusTreeInternalPage *other_node, BufferPoolManager *bpm);
+  auto Delete(const KeyType &key, KeyComparator &comparator) -> bool;
+  void MoveFrom(BPlusTreeInternalPage *other_node);
+
  private:
   // Flexible array member for page data.
   MappingType array_[1];

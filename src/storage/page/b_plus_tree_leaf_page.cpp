@@ -41,19 +41,18 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, in
  * Helper methods to set/get next page id
  */
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_LEAF_PAGE_TYPE::GetNextPageId() const -> page_id_t { 
-  return next_page_id_; 
-}
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::GetNextPageId() const -> page_id_t { return next_page_id_; }
 
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) {
-  this->next_page_id_=next_page_id;
-}
+void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) { this->next_page_id_ = next_page_id; }
 
 /*
  * Helper method to find and return the key associated with input "index"(a.k.a
  * array offset)
  */
+INDEX_TEMPLATE_ARGUMENTS
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::ArrayAt(int index) const -> const MappingType & { return array_[index]; }
+
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyAt(int index) const -> KeyType {
   // replace with your own code
@@ -61,91 +60,102 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyAt(int index) const -> KeyType {
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_LEAF_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
-  array_[index].first=key;
-}
+void B_PLUS_TREE_LEAF_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) { array_[index].first = key; }
 
 /*
  * Helper method to get the value associated with input "index"(a.k.a array
  * offset)
  */
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_LEAF_PAGE_TYPE::ValueAt(int index) const -> ValueType { 
-  return array_[index].second; 
-}
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::ValueAt(int index) const -> ValueType { return array_[index].second; }
 
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_LEAF_PAGE_TYPE::SetValueAt(int index, const ValueType &value) {
-  array_[index].second=value;
-}
+void B_PLUS_TREE_LEAF_PAGE_TYPE::SetValueAt(int index, const ValueType &value) { array_[index].second = value; }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &value,KeyComparator &comparator)->bool{
-  int left=0;
-  int right=GetSize()-1;
-  if(GetSize()==0){
-    SetKeyAt(0,key);
-    SetValueAt(0,value);
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &value, KeyComparator &comparator) -> bool {
+  int left = 0;
+  int right = GetSize() - 1;
+  if (GetSize() == 0) {
+    SetKeyAt(0, key);
+    SetValueAt(0, value);
     IncreaseSize(1);
     return true;
   }
-  if(GetSize()==1){
-    if(comparator(key,KeyAt(left))<0){
-      SetKeyAt(1,KeyAt(0));
-      SetValueAt(1,ValueAt(0));
-      SetKeyAt(left,key);
-      SetValueAt(left,value);
+  if (GetSize() == 1) {
+    if (comparator(key, KeyAt(left)) < 0) {
+      SetKeyAt(1, KeyAt(0));
+      SetValueAt(1, ValueAt(0));
+      SetKeyAt(left, key);
+      SetValueAt(left, value);
       IncreaseSize(1);
-    }
-    else if(comparator(key,KeyAt(left))>0){
-      SetKeyAt(1,key);
-      SetValueAt(1,value);
+    } else if (comparator(key, KeyAt(left)) > 0) {
+      SetKeyAt(1, key);
+      SetValueAt(1, value);
       IncreaseSize(1);
-    }
-    else if(comparator(key,KeyAt(left))==0){
+    } else if (comparator(key, KeyAt(left)) == 0) {
       return false;
     }
     return true;
   }
-  while(left<=right){
-    int mid=left+(right-left)/2;
-    if(comparator(key,KeyAt(mid))<0){
-      right=mid-1;
-    }
-    else if(comparator(key,KeyAt(mid))>0){
-      left=mid+1;
-    }
-    else if(comparator(key,KeyAt(mid))==0){
+  while (left <= right) {
+    int mid = left + (right - left) / 2;
+    if (comparator(key, KeyAt(mid)) < 0) {
+      right = mid - 1;
+    } else if (comparator(key, KeyAt(mid)) > 0) {
+      left = mid + 1;
+    } else if (comparator(key, KeyAt(mid)) == 0) {
       return false;
     }
   }
-  for(int i=GetSize();i>=left+1;i--){
-    SetKeyAt(i,KeyAt(i-1));
-    SetValueAt(i,ValueAt(i-1));
+  for (int i = GetSize(); i >= left + 1; i--) {
+    SetKeyAt(i, KeyAt(i - 1));
+    SetValueAt(i, ValueAt(i - 1));
   }
-  SetKeyAt(left,key);
-  SetValueAt(left,value);
+  SetKeyAt(left, key);
+  SetValueAt(left, value);
   IncreaseSize(1);
   return true;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveTo(BPlusTreeLeafPage* other_node){
-  for(int i=GetMaxSize()/2;i<GetMaxSize();i++){
-    other_node->SetKeyAt(i-GetMaxSize()/2,KeyAt(i));
-    other_node->SetValueAt(i-GetMaxSize()/2, ValueAt(i));
+void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveTo(BPlusTreeLeafPage *other_node) {
+  for (int i = GetMaxSize() / 2; i < GetMaxSize(); i++) {
+    other_node->SetKeyAt(i - GetMaxSize() / 2, KeyAt(i));
+    other_node->SetValueAt(i - GetMaxSize() / 2, ValueAt(i));
     other_node->IncreaseSize(1);
     this->IncreaseSize(-1);
   }
 }
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key,KeyComparator &comparator)->int{
-  for(int i=0;i<GetSize();i++){
-    if(comparator(array_[i].first,key)==0){
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, KeyComparator &comparator) -> int {
+  for (int i = 0; i < GetSize(); i++) {
+    if (comparator(array_[i].first, key) == 0) {
       return i;
     }
   }
   return -1;
+}
+INDEX_TEMPLATE_ARGUMENTS
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::Delete(const KeyType &key, KeyComparator &comparator) -> bool {
+  int index = KeyIndex(key, comparator);
+  if (index == -1) {
+    return false;
+  }
+  for (int i = index; i <= GetSize() - 2; i++) {
+    array_[i] = array_[i + 1];
+  }
+  IncreaseSize(-1);
+  return true;
+}
+INDEX_TEMPLATE_ARGUMENTS
+void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveFrom(BPlusTreeLeafPage *other_node) {
+  for (int i = 0; i < other_node->GetSize(); i++) {
+    SetKeyAt(i + this->GetSize(), other_node->KeyAt(i));
+    SetValueAt(i + this->GetSize(), other_node->ValueAt(i));
+    IncreaseSize(1);
+    other_node->IncreaseSize(-1);
+  }
 }
 
 template class BPlusTreeLeafPage<GenericKey<4>, RID, GenericComparator<4>>;

@@ -24,6 +24,7 @@ class IndexIterator {
  public:
   // you may define your own constructor based on your member variables
   IndexIterator();
+  explicit IndexIterator(BPlusTreeLeafPage<KeyType, ValueType, KeyComparator> *leaf_node, int pos);
   ~IndexIterator();  // NOLINT
 
   auto IsEnd() -> bool;
@@ -32,12 +33,15 @@ class IndexIterator {
 
   auto operator++() -> IndexIterator &;
 
-  auto operator==(const IndexIterator &itr) const -> bool { throw std::runtime_error("unimplemented"); }
+  auto operator==(const IndexIterator &itr) const -> bool { return leaf_node_ == itr.leaf_node_ && pos_ == itr.pos_; }
 
-  auto operator!=(const IndexIterator &itr) const -> bool { throw std::runtime_error("unimplemented"); }
+  auto operator!=(const IndexIterator &itr) const -> bool { return leaf_node_ != itr.leaf_node_ || pos_ != itr.pos_; }
 
  private:
   // add your own private member variables here
+  BPlusTreeLeafPage<KeyType, ValueType, KeyComparator> *leaf_node_;
+  int pos_;
+  BufferPoolManager *buffer_pool_manager_;
 };
 
 }  // namespace bustub

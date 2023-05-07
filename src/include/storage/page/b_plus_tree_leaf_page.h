@@ -12,7 +12,7 @@
 
 #include <utility>
 #include <vector>
-
+#include "buffer/buffer_pool_manager.h"
 #include "storage/page/b_plus_tree_page.h"
 
 namespace bustub {
@@ -48,13 +48,17 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   // helper methods
   auto GetNextPageId() const -> page_id_t;
   void SetNextPageId(page_id_t next_page_id);
+  auto ArrayAt(int index) const -> const MappingType &;
   auto KeyAt(int index) const -> KeyType;
-  void SetKeyAt(int index,const KeyType &key);
+  void SetKeyAt(int index, const KeyType &key);
   auto ValueAt(int index) const -> ValueType;
-  void SetValueAt(int index,const ValueType &value);
-  auto Insert(const KeyType &key,const ValueType &value,KeyComparator &comparator) -> bool;
-  void MoveTo(BPlusTreeLeafPage* other_node);
-  auto KeyIndex(const KeyType &key,KeyComparator &comparator)->int;
+  void SetValueAt(int index, const ValueType &value);
+  auto Insert(const KeyType &key, const ValueType &value, KeyComparator &comparator) -> bool;
+  void MoveTo(BPlusTreeLeafPage *other_node);
+  auto KeyIndex(const KeyType &key, KeyComparator &comparator) -> int;
+  auto Delete(const KeyType &key, KeyComparator &comparator) -> bool;
+  void MoveFrom(BPlusTreeLeafPage *other_node);
+
  private:
   page_id_t next_page_id_;
   // Flexible array member for page data.
