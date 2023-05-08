@@ -117,6 +117,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveTo(BPlusTreeInternalPage *other_node, B
     child_node->SetParentPageId(other_node->GetPageId());
     other_node->IncreaseSize(1);
     this->IncreaseSize(-1);
+    bpm->UnpinPage(child_node->GetPageId(), true);
   }
 }
 
@@ -134,12 +135,16 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::Delete(const KeyType &key, KeyComparator &c
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveFrom(BPlusTreeInternalPage *other_node) {
+void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveFrom(BPlusTreeInternalPage *other_node, BufferPoolManager *bpm) {
+  int size = GetSize();
   for (int i = 0; i < other_node->GetSize(); i++) {
-    SetKeyAt(i + this->GetSize(), other_node->KeyAt(i));
-    SetValueAt(i + this->GetSize(), other_node->ValueAt(i));
+    SetKeyAt(i + size, other_node->KeyAt(i));
+    SetValueAt(i + size, other_node->ValueAt(i));
+    auto child_node = reinterpret_cast<BPlusTreePage *>(bpm->FetchPage(ValueAt(i + size))->GetData());
+    child_node->SetParentPageId(this->GetPageId());
     IncreaseSize(1);
     other_node->IncreaseSize(-1);
+    bpm->UnpinPage(child_node->GetPageId(), true);
   }
 }
 // valuetype for internalNode should be page id_t

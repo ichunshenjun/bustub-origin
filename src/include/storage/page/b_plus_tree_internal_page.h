@@ -50,7 +50,7 @@ class BPlusTreeInternalPage : public BPlusTreePage {
   void Insert(int index, const KeyType &key, const ValueType &value);
   void MoveTo(BPlusTreeInternalPage *other_node, BufferPoolManager *bpm);
   auto Delete(const KeyType &key, KeyComparator &comparator) -> bool;
-  void MoveFrom(BPlusTreeInternalPage *other_node);
+  void MoveFrom(BPlusTreeInternalPage *other_node, BufferPoolManager *bpm);
 
  private:
   // Flexible array member for page data.

@@ -55,8 +55,8 @@ TEST(BPlusTreeConcurrentTestC1, SplitTest) {
     EXPECT_EQ(false, tree.Insert(index_key, rid, transaction));
   }
   index_key.SetFromInteger(1);
-  auto leaf_node = reinterpret_cast<BPlusTreeLeafPage<GenericKey<8>, RID, GenericComparator<8>> *>(
-      tree.FindLeafPage(index_key));
+  auto leaf_node =
+      reinterpret_cast<BPlusTreeLeafPage<GenericKey<8>, RID, GenericComparator<8>> *>(tree.FindLeafPage(index_key));
   ASSERT_NE(nullptr, leaf_node);
   EXPECT_EQ(1, leaf_node->GetSize());
   EXPECT_EQ(2, leaf_node->GetMaxSize());

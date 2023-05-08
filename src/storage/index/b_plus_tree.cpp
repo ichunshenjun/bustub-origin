@@ -38,6 +38,7 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
   auto leaf_node = FindLeafPage(key);
   int index = leaf_node->KeyIndex(key, comparator_);
   result->emplace_back(leaf_node->ValueAt(index));
+  buffer_pool_manager_->UnpinPage(leaf_node->GetPageId(), false);
   return index >= 0;
 }
 
@@ -57,7 +58,9 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
     auto root_node = reinterpret_cast<LeafPage *>(buffer_pool_manager_->NewPage(&root_page_id_)->GetData());
     root_node->Init(root_page_id_, INVALID_PAGE_ID, leaf_max_size_);
     UpdateRootPageId(1);
-    return static_cast<bool>(root_node->Insert(key, value, comparator_));
+    auto success = static_cast<bool>(root_node->Insert(key, value, comparator_));
+    buffer_pool_manager_->UnpinPage(root_node->GetPageId(), true);
+    return success;
   }
   auto leaf_node = FindLeafPage(key);
   auto success = leaf_node->Insert(key, value, comparator_);
@@ -97,6 +100,7 @@ auto BPLUSTREE_TYPE::Split(ClassType *origin_node) -> ClassType * {
     new_leaf_node->SetParentPageId(origin_leaf_node->GetParentPageId());
     new_leaf_node->SetNextPageId(origin_leaf_node->GetNextPageId());
     origin_leaf_node->SetNextPageId(new_leaf_node->GetPageId());
+    buffer_pool_manager_->UnpinPage(new_leaf_node->GetPageId(), true);
     return reinterpret_cast<ClassType *>(new_leaf_node);
   }
   auto origin_internal_node = reinterpret_cast<InternalPage *>(origin_node);
@@ -106,6 +110,7 @@ auto BPLUSTREE_TYPE::Split(ClassType *origin_node) -> ClassType * {
   InsertIntoParent(origin_internal_node, origin_internal_node->KeyAt(origin_internal_node->GetMinSize()),
                    new_internal_node);
   new_internal_node->SetParentPageId(origin_internal_node->GetParentPageId());
+  buffer_pool_manager_->UnpinPage(new_internal_node->GetPageId(), true);
   return reinterpret_cast<ClassType *>(new_internal_node);
 }
 
@@ -123,7 +128,7 @@ void BPLUSTREE_TYPE::InsertIntoParent(ClassType *origin_node, const KeyType &key
     root_page_id_ = internal_node_id;
     UpdateRootPageId(0);
     origin_node->SetParentPageId(internal_node_id);
-    // buffer_pool_manager_->UnpinPage(root_page_id_, true);
+    buffer_pool_manager_->UnpinPage(root_page_id_, true);
     return;
   }
   page_id_t parent_node_id = origin_node->GetParentPageId();
@@ -133,7 +138,7 @@ void BPLUSTREE_TYPE::InsertIntoParent(ClassType *origin_node, const KeyType &key
   if (parent_node->GetSize() == parent_node->GetMaxSize() + 1) {
     Split(parent_node);
   }
-  // buffer_pool_manager_->UnpinPage(parent_node_id, true);
+  buffer_pool_manager_->UnpinPage(parent_node_id, true);
 }
 /*****************************************************************************
  * REMOVE
@@ -149,6 +154,7 @@ INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
   auto leaf_node = FindLeafPage(key);
   DeleteEntry(key, leaf_node);
+  buffer_pool_manager_->UnpinPage(leaf_node->GetPageId(), true);
 }
 
 INDEX_TEMPLATE_ARGUMENTS
@@ -162,6 +168,7 @@ void BPLUSTREE_TYPE::DeleteEntry(const KeyType &key, ClassType *delete_node) {
     root_page_id_ = new_root_node->GetPageId();
     UpdateRootPageId(0);
     new_root_node->SetParentPageId(INVALID_PAGE_ID);
+    buffer_pool_manager_->UnpinPage(new_root_node->GetPageId(), true);
   } else if (!delete_node->IsRootPage() && delete_node->GetSize() < delete_node->GetMinSize()) {
     // 获得左边和右边的兄弟节点
     auto parent_page_id = delete_node->GetParentPageId();
@@ -189,6 +196,7 @@ void BPLUSTREE_TYPE::DeleteEntry(const KeyType &key, ClassType *delete_node) {
       right_sibling_node =
           reinterpret_cast<ClassType *>(buffer_pool_manager_->FetchPage(right_sibling_node_id)->GetData());
     }
+    buffer_pool_manager_->UnpinPage(parent_node->GetPageId(), true);
     // 判断要合并还是要借
     auto max_node_size = delete_node->GetMaxSize();
     if (left_sibling_node != nullptr) {
@@ -198,6 +206,7 @@ void BPLUSTREE_TYPE::DeleteEntry(const KeyType &key, ClassType *delete_node) {
       if (delete_node->GetSize() + left_sibling_node->GetSize() >= max_node_size) {
         Borrow(left_sibling_node, delete_node);
       }
+      buffer_pool_manager_->UnpinPage(left_sibling_node->GetPageId(), true);
     }
     if (right_sibling_node != nullptr) {
       if (delete_node->GetSize() + right_sibling_node->GetSize() < max_node_size) {
@@ -206,6 +215,7 @@ void BPLUSTREE_TYPE::DeleteEntry(const KeyType &key, ClassType *delete_node) {
       if (delete_node->GetSize() + right_sibling_node->GetSize() >= max_node_size) {
         Borrow(delete_node, right_sibling_node);
       }
+      buffer_pool_manager_->UnpinPage(right_sibling_node->GetPageId(), true);
     }
   }
 }
@@ -247,6 +257,7 @@ void BPLUSTREE_TYPE::Borrow(ClassType *left_node, ClassType *right_node) {
       auto value = right_internal_node->ValueAt(0);
       auto child_node = reinterpret_cast<InternalPage *>(buffer_pool_manager_->FetchPage(value)->GetData());
       child_node->SetParentPageId(left_internal_node->GetPageId());
+      buffer_pool_manager_->UnpinPage(value, true);
       right_internal_node->Delete(key, comparator_);
       left_internal_node->SetKeyAt(left_node->GetSize(), key);
       left_internal_node->SetValueAt(left_node->GetSize(), value);
@@ -261,10 +272,12 @@ void BPLUSTREE_TYPE::Borrow(ClassType *left_node, ClassType *right_node) {
       right_internal_node->Insert(0, key, value);
       auto child_node = reinterpret_cast<InternalPage *>(buffer_pool_manager_->FetchPage(value)->GetData());
       child_node->SetParentPageId(right_internal_node->GetPageId());
+      buffer_pool_manager_->UnpinPage(value, true);
       auto index = parent_node->ValueIndex(right_node->GetPageId());
       parent_node->SetKeyAt(index, key);
     }
   }
+  buffer_pool_manager_->UnpinPage(parent_node->GetPageId(), true);
 }
 
 INDEX_TEMPLATE_ARGUMENTS
@@ -274,15 +287,20 @@ void BPLUSTREE_TYPE::Merge(ClassType *left_node, ClassType *right_node) {
       reinterpret_cast<InternalPage *>(buffer_pool_manager_->FetchPage(left_node->GetParentPageId())->GetData());
   if (left_node->IsLeafPage()) {
     // left <-right
-    left_node->MoveFrom(right_node);
-    int index = parent_node->ValueIndex(right_node->GetPageId());
+    auto left_leaf_node = reinterpret_cast<LeafPage *>(left_node);
+    auto right_leaf_node = reinterpret_cast<LeafPage *>(right_node);
+    left_leaf_node->MoveFrom(right_leaf_node);
+    int index = parent_node->ValueIndex(right_leaf_node->GetPageId());
     DeleteEntry(parent_node->KeyAt(index), parent_node);
   } else {
     // left <- right
-    left_node->MoveFrom(right_node);
-    int index = parent_node->ValueIndex(right_node->GetPageId());
+    auto left_internal_node = reinterpret_cast<InternalPage *>(left_node);
+    auto right_internal_node = reinterpret_cast<InternalPage *>(right_node);
+    left_internal_node->MoveFrom(right_internal_node, buffer_pool_manager_);
+    int index = parent_node->ValueIndex(right_internal_node->GetPageId());
     DeleteEntry(parent_node->KeyAt(index), parent_node);
   }
+  buffer_pool_manager_->UnpinPage(parent_node->GetPageId(), true);
 }
 /*****************************************************************************
  * INDEX ITERATOR
