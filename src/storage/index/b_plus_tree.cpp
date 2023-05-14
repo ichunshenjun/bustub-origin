@@ -314,6 +314,9 @@ INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::FindLeafPage(bool left) -> LeafPage * {
   page_id_t cur_node_id = root_page_id_;
   page_id_t new_node_id;
+  if(cur_node_id==INVALID_PAGE_ID){
+    return nullptr;
+  }
   auto cur_node = reinterpret_cast<BPlusTreePage *>(buffer_pool_manager_->FetchPage(cur_node_id)->GetData());
   while (!cur_node->IsLeafPage()) {
     auto cur_internal_node = reinterpret_cast<InternalPage *>(cur_node);
@@ -330,6 +333,9 @@ auto BPLUSTREE_TYPE::FindLeafPage(bool left) -> LeafPage * {
 }
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::Begin() -> INDEXITERATOR_TYPE {
+  if (IsEmpty()) {
+    return INDEXITERATOR_TYPE(nullptr, 0);
+  }
   auto leaf_node = FindLeafPage(true);
   return INDEXITERATOR_TYPE(leaf_node, 0);
 }
@@ -341,6 +347,9 @@ auto BPLUSTREE_TYPE::Begin() -> INDEXITERATOR_TYPE {
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::Begin(const KeyType &key) -> INDEXITERATOR_TYPE {
+  if (IsEmpty()) {
+    return INDEXITERATOR_TYPE(nullptr, 0);
+  }
   auto leaf_node = FindLeafPage(key);
   return INDEXITERATOR_TYPE(leaf_node, leaf_node->KeyIndex(key, comparator_));
 }
@@ -352,6 +361,9 @@ auto BPLUSTREE_TYPE::Begin(const KeyType &key) -> INDEXITERATOR_TYPE {
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::End() -> INDEXITERATOR_TYPE {
+  if (IsEmpty()) {
+    return INDEXITERATOR_TYPE(nullptr, 0);
+  }
   auto leaf_node = FindLeafPage(false);
   return INDEXITERATOR_TYPE(leaf_node, leaf_node->GetSize());
 }

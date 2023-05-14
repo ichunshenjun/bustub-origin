@@ -14,6 +14,7 @@
 #include <cstdio>
 
 #include "buffer/buffer_pool_manager_instance.h"
+#include "common/logger.h"
 #include "gtest/gtest.h"
 #include "storage/index/b_plus_tree.h"
 #include "test_util.h"  // NOLINT
