@@ -75,8 +75,20 @@ class SimpleAggregationHashTable {
     for (uint32_t i = 0; i < agg_exprs_.size(); i++) {
       switch (agg_types_[i]) {
         case AggregationType::CountStarAggregate:
+          if(result->aggregates_[i].IsNull()){
+            result->aggregates_[i]=ValueFactory::GetIntegerValue(0);
+          }
+          result->aggregates_[i]=result->aggregates_[i].Add(ValueFactory::GetIntegerValue(1));
+          break;
         case AggregationType::CountAggregate:
+          if(result->aggregates_[i].IsNull()){
+            result->aggregates_[i]=ValueFactory::GetIntegerValue(0);
+          }
+          if(input.aggregates_[i].IsNull()){
+            result->aggregates_[i]=result->aggregates_[i].Add(ValueFactory::GetIntegerValue(1));
+          }
         case AggregationType::SumAggregate:
+        
         case AggregationType::MinAggregate:
         case AggregationType::MaxAggregate:
           break;
